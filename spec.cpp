@@ -1,5 +1,6 @@
 #include <QApplication>
 #include <QThread>
+#include <QSettings>
 #include <thread>
 #include <oplog.h>
 
@@ -20,6 +21,10 @@ Q_IMPORT_PLUGIN(QXcbIntegrationPlugin);
 
 #endif
 
+static void configDlgSetDetected(ConfigDialog* dlg)
+{
+    QMetaObject::invokeMethod(dlg, "setDetected", Qt::QueuedConnection);
+}
 
 static void configDlgThread()
 {
@@ -28,6 +33,7 @@ static void configDlgThread()
     QApplication a(argc, &argv);
 
     ConfigDialog dlg;
+    GCAdapter::SetAdapterCallback(std::bind(configDlgSetDetected, &dlg));
     dlg.exec();
     a.exec();
 }
@@ -35,6 +41,14 @@ static void configDlgThread()
 EXPORT void CALL CloseDLL(void)
 {
     GCAdapter::Shutdown();
+
+    QSettings settings(SETTINGS_FILE, QSettings::IniFormat);
+
+    for (uint32_t i = 0; i < 4; i++)
+    {
+        settings.setValue("controller" + QString::number(i) + "/enabled", GCAdapter::controller_status[i].enabled);
+        settings.setValue("controller" + QString::number(i) + "/lz_swap", GCAdapter::controller_status[i].lz_swap);
+    }
 }
 
 EXPORT void CALL ControllerCommand(int Control, uint8_t* Command)
@@ -49,8 +63,19 @@ EXPORT void CALL DllAbout(void* hParent)
 
 EXPORT void CALL DllConfig(void* hParent)
 {
-    std::thread dlgThread(configDlgThread);
-    dlgThread.join();
+    if (nullptr == qApp)
+    {
+        std::thread dlgThread(configDlgThread);
+        dlgThread.join();
+    }
+    else
+    {
+        ConfigDialog dlg;
+        GCAdapter::SetAdapterCallback(std::bind(configDlgSetDetected, &dlg));
+        dlg.exec();
+    }
+
+    GCAdapter::SetAdapterCallback(nullptr);
 }
 
 EXPORT void CALL DllTest(void* hParent)
@@ -73,10 +98,21 @@ EXPORT void CALL GetKeys(int Control, BUTTONS* Keys)
 
 EXPORT void CALL InitiateControllers(CONTROL_INFO* ControlInfo)
 {
+    QSettings settings(SETTINGS_FILE, QSettings::IniFormat);
+
+    for (uint32_t i = 0; i < 4; i++)
+    {
+        GCAdapter::controller_status[i].enabled = settings.value("controller" + QString::number(i) + "/enabled").toBool();
+        GCAdapter::controller_status[i].lz_swap = settings.value("controller" + QString::number(i) + "/lz_swap").toBool();
+    }
+
     GCAdapter::Init();
 
-    ControlInfo->Controls[0].Present = 1;
-    ControlInfo->Controls[0].RawData = 1;
+    for (uint32_t i = 0; i < 4; i++)
+    {
+        ControlInfo->Controls[i].Present = GCAdapter::controller_status[i].enabled;
+        ControlInfo->Controls[i].RawData = GCAdapter::controller_status[i].enabled;
+    }
 }
 
 EXPORT void CALL ReadController(int Control, uint8_t* Command)

@@ -7,8 +7,15 @@
 #include <atomic>
 #include <functional>
 
+struct ControllerStatus
+{
+    bool enabled;
+    bool lz_swap;
+};
+
 namespace GCAdapter
 {
+    extern ControllerStatus controller_status[4];
 
     void Init();
     void Reset();

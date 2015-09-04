@@ -8,12 +8,13 @@
 
 #include <oplog.h>
 #include "configdlg.h"
+#include "gcadapter.h"
 
 ConfigDialog::ConfigDialog(QWidget* parent)
     : QDialog(parent)
 {
     // status
-    status = new QLabel;
+    status = new QLabel(tr("Adapter Not Detected"));
     statusGroupBox = new QGroupBox(tr("Status"));
     QHBoxLayout* slayout = new QHBoxLayout;
 
@@ -25,47 +26,31 @@ ConfigDialog::ConfigDialog(QWidget* parent)
     QGridLayout* menu = new QGridLayout;
 
     QLabel* enabledLabel = new QLabel(tr("Enabled"));
-    QLabel* switchLabel = new QLabel(tr("Switch L/Z"));
-
-    QLabel* c1Label = new QLabel(tr("Controller 1"));
-    QLabel* c2Label = new QLabel(tr("Controller 2"));
-    QLabel* c3Label = new QLabel(tr("Controller 3"));
-    QLabel* c4Label = new QLabel(tr("Controller 4"));
-
-    QCheckBox* c1Enabled = new QCheckBox();
-    QCheckBox* c2Enabled = new QCheckBox();
-    QCheckBox* c3Enabled = new QCheckBox();
-    QCheckBox* c4Enabled = new QCheckBox();
-
-    QCheckBox* c1Switch = new QCheckBox();
-    QCheckBox* c2Switch = new QCheckBox();
-    QCheckBox* c3Switch = new QCheckBox();
-    QCheckBox* c4Switch = new QCheckBox();
+    QLabel* switchLabel = new QLabel(tr("Swap L/Z trigger"));
 
     menu->addWidget(enabledLabel, 0, 1);
     menu->addWidget(switchLabel, 0, 2);
 
-    menu->addWidget(c1Label, 1, 0);
-    menu->addWidget(c1Enabled, 1, 1);
-    menu->addWidget(c1Switch, 1, 2);
+    for (uint32_t i = 0; i < 4; i++)
+    {
+        QLabel* cLabel = new QLabel("Controller " + QString::number(i+1));
 
-    menu->addWidget(c2Label, 2, 0);
-    menu->addWidget(c2Enabled, 2, 1);
-    menu->addWidget(c2Switch, 2, 2);
+        cEnabled[i] = new QCheckBox;
+        cEnabled[i]->setChecked(GCAdapter::controller_status[i].enabled);
 
-    menu->addWidget(c3Label, 3, 0);
-    menu->addWidget(c3Enabled, 3, 1);
-    menu->addWidget(c3Switch, 3, 2);
+        cSwap[i] = new QCheckBox;
+        cSwap[i]->setChecked(GCAdapter::controller_status[i].lz_swap);
 
-    menu->addWidget(c4Label, 4, 0);
-    menu->addWidget(c4Enabled, 4, 1);
-    menu->addWidget(c4Switch, 4, 2);
+        menu->addWidget(cLabel, i+1, 0);
+        menu->addWidget(cEnabled[i], i+1, 1);
+        menu->addWidget(cSwap[i], i+1, 2);
+    }
 
     menuGroupBox->setLayout(menu);
 
     buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
 
-    connect(buttonBox, SIGNAL(accepted()), this, SLOT(close()));
+    connect(buttonBox, SIGNAL(accepted()), this, SLOT(saveAndClose()));
     connect(buttonBox, SIGNAL(rejected()), this, SLOT(close()));
 
     QVBoxLayout *layout = new QVBoxLayout;
@@ -75,8 +60,36 @@ ConfigDialog::ConfigDialog(QWidget* parent)
 
     setLayout(layout);
     setWindowTitle(tr("Settings"));
+
+    if (!GCAdapter::IsDetected())
+    {
+        if (!GCAdapter::IsDriverDetected())
+        {
+            status->setText(tr("Driver Not Detected"));
+        }
+    }
+    else
+    {
+        status->setText(tr("Adapter Detected"));
+    }
 }
 
 ConfigDialog::~ConfigDialog()
 {
+}
+
+void ConfigDialog::setDetected()
+{
+    status->setText(tr("Adapter Detected"));
+}
+
+void ConfigDialog::saveAndClose()
+{
+    for (uint32_t i = 0; i < 4; i++)
+    {
+        GCAdapter::controller_status[i].enabled = cEnabled[i]->isChecked();
+        GCAdapter::controller_status[i].lz_swap = cSwap[i]->isChecked();
+    }
+
+    close();
 }

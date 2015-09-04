@@ -2,9 +2,12 @@
 
 #include <QDialog>
 
+#define SETTINGS_FILE "gcadapter.ini"
+
 class QLabel;
 class QGroupBox;
 class QDialogButtonBox;
+class QCheckBox;
 
 class ConfigDialog : public QDialog
 {
@@ -14,9 +17,18 @@ public:
     ConfigDialog(QWidget* parent = 0);
     ~ConfigDialog();
 
+public slots:
+    void setDetected();
+
+private slots:
+    void saveAndClose();
+
 private:
     QLabel* status;
     QGroupBox* statusGroupBox;
     QGroupBox* menuGroupBox;
     QDialogButtonBox* buttonBox;
+
+    QCheckBox* cEnabled[4];
+    QCheckBox* cSwap[4];
 };
