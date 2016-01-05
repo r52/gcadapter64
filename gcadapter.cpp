@@ -26,7 +26,7 @@ namespace GCAdapter
 
     static const uint8_t STICK_CENTER = 0x80;
 
-    ControllerStatus controller_status[4] = { {0,0}, {0,0}, {0,0}, {0,0} };
+    ControllerStatus controller_status[4] = { { false, true }, { false, true }, { false, true }, { false, true } };
     static uint8_t s_controller_type[4] = { CONTROLLER_NONE, CONTROLLER_NONE, CONTROLLER_NONE, CONTROLLER_NONE };
     static uint8_t s_controller_rumble[4];
 
@@ -368,9 +368,9 @@ namespace GCAdapter
                 if (b1 & (1 << 7)) pad.U_DPAD = 1;
 
                 if (b2 & (1 << 0)) pad.START_BUTTON = 1;
-                if (b2 & (1 << 1)) (controller_status[chan].lz_swap) ? pad.L_TRIG = 1 : pad.Z_TRIG = 1;
+                if (b2 & (1 << 1)) pad.Z_TRIG = 1;
                 if (b2 & (1 << 2)) pad.R_TRIG = 1;
-                if (b2 & (1 << 3)) (controller_status[chan].lz_swap) ? pad.Z_TRIG = 1 : pad.L_TRIG = 1;
+                if (b2 & (1 << 3)) (controller_status[chan].l_as_z) ? pad.Z_TRIG = 1 : pad.L_TRIG = 1;
 
                 pad.Y_AXIS = TEST_DEADZONE((int32_t)controller_payload_copy[1 + (9 * chan) + 3] - STICK_CENTER - 8, 1);
                 pad.X_AXIS = TEST_DEADZONE((int32_t)controller_payload_copy[1 + (9 * chan) + 4] - STICK_CENTER - 4, 1);
@@ -382,16 +382,6 @@ namespace GCAdapter
                 pad.R_CBUTTON = (cstick_x > 0);
                 pad.U_CBUTTON = (cstick_y > 0);
                 pad.D_CBUTTON = (cstick_y < 0);
-
-                if (controller_status[chan].lz_swap)
-                {
-                    pad.Z_TRIG = (controller_payload_copy[1 + (9 * chan) + 7] > 0x40);
-                }
-                else
-                {
-                    pad.L_TRIG = (controller_payload_copy[1 + (9 * chan) + 7] > 0x40);
-                }
-                pad.R_TRIG = (controller_payload_copy[1 + (9 * chan) + 8] > 0x40);
 
                 *command = pad.Value;
             }

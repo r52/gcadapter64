@@ -26,7 +26,7 @@ ConfigDialog::ConfigDialog(QWidget* parent)
     QGridLayout* menu = new QGridLayout;
 
     QLabel* enabledLabel = new QLabel(tr("Enabled"));
-    QLabel* switchLabel = new QLabel(tr("Swap L/Z trigger"));
+    QLabel* switchLabel = new QLabel(tr("Use L as Z"));
 
     menu->addWidget(enabledLabel, 0, 1);
     menu->addWidget(switchLabel, 0, 2);
@@ -39,7 +39,7 @@ ConfigDialog::ConfigDialog(QWidget* parent)
         cEnabled[i]->setChecked(GCAdapter::controller_status[i].enabled);
 
         cSwap[i] = new QCheckBox;
-        cSwap[i]->setChecked(GCAdapter::controller_status[i].lz_swap);
+        cSwap[i]->setChecked(GCAdapter::controller_status[i].l_as_z);
 
         menu->addWidget(cLabel, i+1, 0);
         menu->addWidget(cEnabled[i], i+1, 1);
@@ -88,7 +88,7 @@ void ConfigDialog::saveAndClose()
     for (uint32_t i = 0; i < 4; i++)
     {
         GCAdapter::controller_status[i].enabled = cEnabled[i]->isChecked();
-        GCAdapter::controller_status[i].lz_swap = cSwap[i]->isChecked();
+        GCAdapter::controller_status[i].l_as_z = cSwap[i]->isChecked();
     }
 
     close();

@@ -3,6 +3,7 @@
 #include <QSettings>
 #include <thread>
 #include <oplog.h>
+#include <opstrutil.h>
 
 #include "gcadapter.h"
 #include "spec.h"
@@ -47,7 +48,7 @@ EXPORT void CALL CloseDLL(void)
     for (uint32_t i = 0; i < 4; i++)
     {
         settings.setValue("controller" + QString::number(i) + "/enabled", GCAdapter::controller_status[i].enabled);
-        settings.setValue("controller" + QString::number(i) + "/lz_swap", GCAdapter::controller_status[i].lz_swap);
+        settings.setValue("controller" + QString::number(i) + "/l_as_z", GCAdapter::controller_status[i].l_as_z);
     }
 }
 
@@ -87,7 +88,7 @@ EXPORT void CALL GetDllInfo(PLUGIN_INFO* PluginInfo)
 {
     PluginInfo->Version = 0x0101;
     PluginInfo->Type = PLUGIN_TYPE_CONTROLLER;
-    std::strncpy(PluginInfo->Name, "GC Adapter Test", sizeof(PluginInfo->Name));
+    op::strlcpy(PluginInfo->Name, "GC Adapter Test", sizeof(PluginInfo->Name));
     return;
 }
 
@@ -103,7 +104,7 @@ EXPORT void CALL InitiateControllers(CONTROL_INFO* ControlInfo)
     for (uint32_t i = 0; i < 4; i++)
     {
         GCAdapter::controller_status[i].enabled = settings.value("controller" + QString::number(i) + "/enabled").toBool();
-        GCAdapter::controller_status[i].lz_swap = settings.value("controller" + QString::number(i) + "/lz_swap").toBool();
+        GCAdapter::controller_status[i].l_as_z = settings.value("controller" + QString::number(i) + "/lz_swap").toBool();
     }
 
     GCAdapter::Init();

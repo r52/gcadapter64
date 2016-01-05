@@ -10,7 +10,7 @@
 struct ControllerStatus
 {
     bool enabled;
-    bool lz_swap;
+    bool l_as_z;
 };
 
 namespace GCAdapter
