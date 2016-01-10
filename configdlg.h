@@ -31,4 +31,5 @@ private:
 
     QCheckBox* cEnabled[4];
     QCheckBox* cSwap[4];
+    QCheckBox* vcDeadzone[4];
 };

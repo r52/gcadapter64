@@ -9,9 +9,6 @@
 #include <oplog.h>
 
 #include "gcadapter.h"
-#include "Controller #1.1.h"
-
-#define TEST_DEADZONE(num, zone) (std::abs(num) > zone) ? num : 0;
 
 using namespace std::literals::chrono_literals;
 
@@ -26,7 +23,7 @@ namespace GCAdapter
 
     static const uint8_t STICK_CENTER = 0x80;
 
-    ControllerStatus controller_status[4] = { { false, true }, { false, true }, { false, true }, { false, true } };
+    ControllerStatus controller_status[4] = { { false, true, false }, { false, true, false }, { false, true, false }, { false, true, false } };
     static uint8_t s_controller_type[4] = { CONTROLLER_NONE, CONTROLLER_NONE, CONTROLLER_NONE, CONTROLLER_NONE };
     static uint8_t s_controller_rumble[4];
 
@@ -323,7 +320,28 @@ namespace GCAdapter
         LOG_DEBUG(GCAdapter) << "GC Adapter detached";
     }
 
-    void Input(int chan, uint32_t* command)
+    void Calibrate(int chan)
+    {
+        while (s_handle == nullptr)
+        {
+            std::this_thread::sleep_for(100ms);
+        }
+
+        GCPadStatus pad;
+        memset(&pad, 0, sizeof(pad));
+
+        Input(chan, &pad);
+
+        memset(&controller_status[chan].origin, 0, sizeof(controller_status[chan].origin));
+        controller_status[chan].origin.sX = pad.stickX;
+        controller_status[chan].origin.sY = pad.stickY;
+        controller_status[chan].origin.cX = pad.substickX;
+        controller_status[chan].origin.cY = pad.substickY;
+        controller_status[chan].origin.L = pad.triggerLeft;
+        controller_status[chan].origin.R = pad.triggerRight;
+    }
+
+    void Input(int chan, GCPadStatus* pad)
     {
         if (s_handle == nullptr || !s_detected)
             return;
@@ -350,40 +368,33 @@ namespace GCAdapter
 
             s_controller_type[chan] = type;
 
+            memset(pad, 0, sizeof(*pad));
             if (s_controller_type[chan] != CONTROLLER_NONE)
             {
-                BUTTONS pad;
-                memset(&pad, 0, sizeof(pad));
                 uint8_t b1 = controller_payload_copy[1 + (9 * chan) + 1];
                 uint8_t b2 = controller_payload_copy[1 + (9 * chan) + 2];
 
-                if (b1 & (1 << 0)) pad.A_BUTTON = 1;
-                if (b1 & (1 << 1)) pad.B_BUTTON = 1;
-                //if (b1 & (1 << 2)) pad->button |= PAD_BUTTON_X; no n64 equivalent
-                //if (b1 & (1 << 3)) pad->button |= PAD_BUTTON_Y; no n64 equivalent
+                if (b1 & (1 << 0)) pad->button |= PAD_BUTTON_A;
+                if (b1 & (1 << 1)) pad->button |= PAD_BUTTON_B;
+                if (b1 & (1 << 2)) pad->button |= PAD_BUTTON_X;
+                if (b1 & (1 << 3)) pad->button |= PAD_BUTTON_Y;
 
-                if (b1 & (1 << 4)) pad.L_DPAD = 1;
-                if (b1 & (1 << 5)) pad.R_DPAD = 1;
-                if (b1 & (1 << 6)) pad.D_DPAD = 1;
-                if (b1 & (1 << 7)) pad.U_DPAD = 1;
+                if (b1 & (1 << 4)) pad->button |= PAD_BUTTON_LEFT;
+                if (b1 & (1 << 5)) pad->button |= PAD_BUTTON_RIGHT;
+                if (b1 & (1 << 6)) pad->button |= PAD_BUTTON_DOWN;
+                if (b1 & (1 << 7)) pad->button |= PAD_BUTTON_UP;
 
-                if (b2 & (1 << 0)) pad.START_BUTTON = 1;
-                if (b2 & (1 << 1)) pad.Z_TRIG = 1;
-                if (b2 & (1 << 2)) pad.R_TRIG = 1;
-                if (b2 & (1 << 3)) (controller_status[chan].l_as_z) ? pad.Z_TRIG = 1 : pad.L_TRIG = 1;
+                if (b2 & (1 << 0)) pad->button |= PAD_BUTTON_START;
+                if (b2 & (1 << 1)) pad->button |= PAD_TRIGGER_Z;
+                if (b2 & (1 << 2)) pad->button |= PAD_TRIGGER_R;
+                if (b2 & (1 << 3)) pad->button |= PAD_TRIGGER_L;
 
-                pad.Y_AXIS = TEST_DEADZONE((int32_t)controller_payload_copy[1 + (9 * chan) + 3] - STICK_CENTER - 8, 1);
-                pad.X_AXIS = TEST_DEADZONE((int32_t)controller_payload_copy[1 + (9 * chan) + 4] - STICK_CENTER - 4, 1);
-
-                int32_t cstick_x = TEST_DEADZONE((int32_t)controller_payload_copy[1 + (9 * chan) + 5] - STICK_CENTER - 4, 0x20);
-                int32_t cstick_y = TEST_DEADZONE((int32_t)controller_payload_copy[1 + (9 * chan) + 6] - STICK_CENTER - 5, 0x20);
-
-                pad.L_CBUTTON = (cstick_x < 0);
-                pad.R_CBUTTON = (cstick_x > 0);
-                pad.U_CBUTTON = (cstick_y > 0);
-                pad.D_CBUTTON = (cstick_y < 0);
-
-                *command = pad.Value;
+                pad->stickX = controller_payload_copy[1 + (9 * chan) + 3];
+                pad->stickY = controller_payload_copy[1 + (9 * chan) + 4];
+                pad->substickX = controller_payload_copy[1 + (9 * chan) + 5];
+                pad->substickY = controller_payload_copy[1 + (9 * chan) + 6];
+                pad->triggerLeft = controller_payload_copy[1 + (9 * chan) + 7];
+                pad->triggerRight = controller_payload_copy[1 + (9 * chan) + 8];
             }
         }
     }

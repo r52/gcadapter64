@@ -5,6 +5,7 @@
 #include <QDialogButtonBox>
 #include <QPushButton>
 #include <QThread>
+#include <QSettings>
 
 #include <oplog.h>
 #include "configdlg.h"
@@ -27,9 +28,12 @@ ConfigDialog::ConfigDialog(QWidget* parent)
 
     QLabel* enabledLabel = new QLabel(tr("Enabled"));
     QLabel* switchLabel = new QLabel(tr("Use L as Z"));
+    QLabel* vcLabel = new QLabel(tr("Use generic VC deadzone mapping (inaccurate)"));
+    vcLabel->setWordWrap(true);
 
     menu->addWidget(enabledLabel, 0, 1);
     menu->addWidget(switchLabel, 0, 2);
+    menu->addWidget(vcLabel, 0, 3);
 
     for (uint32_t i = 0; i < 4; i++)
     {
@@ -41,9 +45,13 @@ ConfigDialog::ConfigDialog(QWidget* parent)
         cSwap[i] = new QCheckBox;
         cSwap[i]->setChecked(GCAdapter::controller_status[i].l_as_z);
 
+        vcDeadzone[i] = new QCheckBox;
+        vcDeadzone[i]->setChecked(GCAdapter::controller_status[i].vcDeadzone);
+
         menu->addWidget(cLabel, i+1, 0);
         menu->addWidget(cEnabled[i], i+1, 1);
         menu->addWidget(cSwap[i], i+1, 2);
+        menu->addWidget(vcDeadzone[i], i+1, 3);
     }
 
     menuGroupBox->setLayout(menu);
@@ -85,10 +93,17 @@ void ConfigDialog::setDetected()
 
 void ConfigDialog::saveAndClose()
 {
+    QSettings settings(SETTINGS_FILE, QSettings::IniFormat);
+
     for (uint32_t i = 0; i < 4; i++)
     {
         GCAdapter::controller_status[i].enabled = cEnabled[i]->isChecked();
         GCAdapter::controller_status[i].l_as_z = cSwap[i]->isChecked();
+        GCAdapter::controller_status[i].vcDeadzone = vcDeadzone[i]->isChecked();
+
+        settings.setValue("controller" + QString::number(i) + "/enabled", GCAdapter::controller_status[i].enabled);
+        settings.setValue("controller" + QString::number(i) + "/l_as_z", GCAdapter::controller_status[i].l_as_z);
+        settings.setValue("controller" + QString::number(i) + "/vcdeadzone", GCAdapter::controller_status[i].vcDeadzone);
     }
 
     close();
