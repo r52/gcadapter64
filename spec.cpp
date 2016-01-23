@@ -2,8 +2,13 @@
 #include <QThread>
 #include <QSettings>
 #include <thread>
-#include <oplog.h>
+
+#ifdef __OP64_COMPILE__
 #include <opstrutil.h>
+#include <oplog.h>
+#else
+#include "standalone.h"
+#endif
 
 #include "gcadapter.h"
 #include "spec.h"

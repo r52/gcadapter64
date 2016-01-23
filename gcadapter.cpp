@@ -6,7 +6,12 @@
 #include <mutex>
 
 #include <libusb.h>
+
+#ifdef __OP64_COMPILE__
 #include <oplog.h>
+#else
+#include "standalone.h"
+#endif
 
 #include "gcadapter.h"
 

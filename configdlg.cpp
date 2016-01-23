@@ -7,7 +7,12 @@
 #include <QThread>
 #include <QSettings>
 
+#ifdef __OP64_COMPILE__
 #include <oplog.h>
+#else
+#include "standalone.h"
+#endif
+
 #include "configdlg.h"
 #include "gcadapter.h"
 
