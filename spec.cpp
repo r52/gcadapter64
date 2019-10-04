@@ -72,14 +72,14 @@ EXPORT void CALL DllAbout(void* hParent)
 {
     startGCApp();
 
-    static QString aboutMsg = "Dolphin GC Adapter Plugin<br/>"
+    static QString aboutMsg = "GCAdapter64<br/>"
                               "<br/>"
                               "Ported from <a href='https://github.com/dolphin-emu/dolphin/blob/master/Source/Core/InputCommon/GCAdapter.cpp'>Dolphin</a><br/>"
                               "<br/>"
-                              "Licensed under GPLv2<br/>"
+                              "Licensed under GPLv2+<br/>"
                               "Source code available at <a href='https://github.com/r52/gcadapter64'>GitHub</a>";
 
-    QMessageBox::about(nullptr, "About Dolphin GC Adapter Plugin", aboutMsg);
+    QMessageBox::about(nullptr, "About GCAdapter64", aboutMsg);
     gc->app.processEvents();
 }
 
@@ -97,7 +97,7 @@ EXPORT void CALL GetDllInfo(PLUGIN_INFO* PluginInfo)
 {
     PluginInfo->Version = 0x0101;
     PluginInfo->Type    = PLUGIN_TYPE_CONTROLLER;
-    strcpy_s(PluginInfo->Name, sizeof(PluginInfo->Name), "Dolphin GC Adapter Plugin");
+    strcpy_s(PluginInfo->Name, sizeof(PluginInfo->Name), "GCAdapter64");
     return;
 }
 
