@@ -7,10 +7,10 @@ configuration: Release
 environment:
   matrix:
   - platform: x86
-    QtInstallDir: C:\Qt\5.12.4\msvc2017
+    QtInstall: C:\Qt\5.12.4\msvc2017
 
   - platform: x64
-    QtInstallDir: C:\Qt\5.12.4\msvc2017_64
+    QtInstall: C:\Qt\5.12.4\msvc2017_64
 
 build:
   project: gcadapter64.sln
