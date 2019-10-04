@@ -1,0 +1,23 @@
+version: '{branch}-{build}'
+branches:
+  only:
+  - master
+image: Visual Studio 2017
+configuration: Release
+platform:
+- x86
+- x64
+environment:
+  matrix:
+  - platform: x86
+    QTDIR: C:\Qt\5.12.4\msvc2017
+
+  - platform: x64
+    QTDIR: C:\Qt\5.12.4\msvc2017_64
+
+build:
+  project: gcadapter64.sln
+  parallel: true
+  verbosity: minimal
+after_build:
+- ps: .\deploy\pj64package.ps1 -platform "$($env:PLATFORM)"
