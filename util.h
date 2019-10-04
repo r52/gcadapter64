@@ -1,6 +1,5 @@
 #pragma once
 
-#ifndef __OP64_COMPILE__
 #include <iostream>
 
 #define LOG_TRACE(name) std::clog
@@ -12,6 +11,5 @@
 
 namespace op
 {
-    size_t strlcpy(char *dst, const char *src, size_t dsize);
+    size_t strlcpy(char* dst, const char* src, size_t dsize);
 }
-#endif
