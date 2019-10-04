@@ -1,19 +1,14 @@
 // Ported from the Dolphin Emulator Project
 // Licensed under GPLv2+
 
-#include <thread>
 #include <chrono>
 #include <mutex>
+#include <thread>
 
-#include <libusb.h>
-
-#ifdef __OP64_COMPILE__
-#include <oplog.h>
-#else
-#include "standalone.h"
-#endif
+#include <libusb-1.0/libusb.h>
 
 #include "gcadapter.h"
+#include "util.h"
 
 using namespace std::literals::chrono_literals;
 
@@ -21,39 +16,39 @@ namespace GCAdapter
 {
     enum ControllerTypes
     {
-        CONTROLLER_NONE = 0,
-        CONTROLLER_WIRED = 1,
+        CONTROLLER_NONE     = 0,
+        CONTROLLER_WIRED    = 1,
         CONTROLLER_WIRELESS = 2
     };
 
     static const uint8_t STICK_CENTER = 0x80;
 
-    ControllerStatus controller_status[4] = { { false, true, false }, { false, true, false }, { false, true, false }, { false, true, false } };
-    static uint8_t s_controller_type[4] = { CONTROLLER_NONE, CONTROLLER_NONE, CONTROLLER_NONE, CONTROLLER_NONE };
-    static uint8_t s_controller_rumble[4];
+    ControllerStatus controller_status[4] = {{false, true, false}, {false, true, false}, {false, true, false}, {false, true, false}};
+    static uint8_t   s_controller_type[4] = {CONTROLLER_NONE, CONTROLLER_NONE, CONTROLLER_NONE, CONTROLLER_NONE};
+    static uint8_t   s_controller_rumble[4];
 
     static std::mutex s_mutex;
-    static uint8_t s_controller_payload[37];
-    static uint8_t s_controller_payload_swap[37];
+    static uint8_t    s_controller_payload[37];
+    static uint8_t    s_controller_payload_swap[37];
 
     static int s_controller_payload_size = 0;
 
     static std::thread s_adapter_thread;
-    static Flag s_adapter_thread_running;
+    static Flag        s_adapter_thread_running;
 
     static std::thread s_adapter_detect_thread;
-    static Flag s_adapter_detect_thread_running;
+    static Flag        s_adapter_detect_thread_running;
 
     static std::function<void(void)> s_detect_callback;
 
-    static bool s_detected = false;
-    static libusb_device_handle* s_handle = nullptr;
-    static bool s_libusb_driver_not_supported = false;
-    static libusb_context* s_libusb_context = nullptr;
-    static bool s_libusb_hotplug_enabled = false;
+    static bool                           s_detected                    = false;
+    static libusb_device_handle*          s_handle                      = nullptr;
+    static bool                           s_libusb_driver_not_supported = false;
+    static libusb_context*                s_libusb_context              = nullptr;
+    static bool                           s_libusb_hotplug_enabled      = false;
     static libusb_hotplug_callback_handle s_hotplug_handle;
 
-    static uint8_t s_endpoint_in = 0;
+    static uint8_t s_endpoint_in  = 0;
     static uint8_t s_endpoint_out = 0;
 
     static void Read()
@@ -73,9 +68,9 @@ namespace GCAdapter
 
     static bool CheckDeviceAccess(libusb_device* device)
     {
-        int ret;
+        int                      ret;
         libusb_device_descriptor desc;
-        int dRet = libusb_get_device_descriptor(device, &desc);
+        int                      dRet = libusb_get_device_descriptor(device, &desc);
         if (dRet)
         {
             // could not acquire the descriptor, no point in trying to use it.
@@ -85,11 +80,12 @@ namespace GCAdapter
 
         if (desc.idVendor == 0x057e && desc.idProduct == 0x0337)
         {
-            LOG_DEBUG(GCAdapter) << "Found GC Adapter with Vendor: 0x" << std::hex << desc.idVendor << " Product: 0x" << std::hex << desc.idProduct << " Devnum: 1";
+            LOG_DEBUG(GCAdapter) << "Found GC Adapter with Vendor: 0x" << std::hex << desc.idVendor << " Product: 0x" << std::hex << desc.idProduct
+                                 << " Devnum: 1";
 
-            uint8_t bus = libusb_get_bus_number(device);
+            uint8_t bus  = libusb_get_bus_number(device);
             uint8_t port = libusb_get_device_address(device);
-            ret = libusb_open(device, &s_handle);
+            ret          = libusb_open(device, &s_handle);
             if (ret)
             {
                 if (ret == LIBUSB_ERROR_ACCESS)
@@ -100,7 +96,8 @@ namespace GCAdapter
                     }
                     else
                     {
-                        LOG_ERROR(GCAdapter) << "no access to this device: Bus " << bus << " Device " << port << ": ID 0x" << std::hex << desc.idVendor << ":0x" << std::hex << desc.idProduct << ".";
+                        LOG_ERROR(GCAdapter) << "no access to this device: Bus " << bus << " Device " << port << ": ID 0x" << std::hex << desc.idVendor << ":0x"
+                                             << std::hex << desc.idProduct << ".";
                     }
                 }
                 else
@@ -137,17 +134,17 @@ namespace GCAdapter
 
     static void AddGCAdapter(libusb_device* device)
     {
-        libusb_config_descriptor *config = nullptr;
+        libusb_config_descriptor* config = nullptr;
         libusb_get_config_descriptor(device, 0, &config);
         for (uint8_t ic = 0; ic < config->bNumInterfaces; ic++)
         {
-            const libusb_interface *interfaceContainer = &config->interface[ic];
+            const libusb_interface* interfaceContainer = &config->interface[ic];
             for (int i = 0; i < interfaceContainer->num_altsetting; i++)
             {
-                const libusb_interface_descriptor *interface = &interfaceContainer->altsetting[i];
+                const libusb_interface_descriptor* interface = &interfaceContainer->altsetting[i];
                 for (uint8_t e = 0; e < interface->bNumEndpoints; e++)
                 {
-                    const libusb_endpoint_descriptor *endpoint = &interface->endpoint[e];
+                    const libusb_endpoint_descriptor* endpoint = &interface->endpoint[e];
                     if (endpoint->bEndpointAddress & LIBUSB_ENDPOINT_IN)
                         s_endpoint_in = endpoint->bEndpointAddress;
                     else
@@ -156,7 +153,7 @@ namespace GCAdapter
             }
         }
 
-        int tmp = 0;
+        int           tmp     = 0;
         unsigned char payload = 0x13;
         libusb_interrupt_transfer(s_handle, s_endpoint_out, &payload, sizeof(payload), &tmp, 16);
 
@@ -190,7 +187,15 @@ namespace GCAdapter
         s_libusb_hotplug_enabled = libusb_has_capability(LIBUSB_CAP_HAS_HOTPLUG) != 0;
         if (s_libusb_hotplug_enabled)
         {
-            if (libusb_hotplug_register_callback(s_libusb_context, (libusb_hotplug_event)(LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED | LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT), LIBUSB_HOTPLUG_ENUMERATE, 0x057e, 0x0337, LIBUSB_HOTPLUG_MATCH_ANY, HotplugCallback, NULL, &s_hotplug_handle) != LIBUSB_SUCCESS)
+            if (libusb_hotplug_register_callback(s_libusb_context,
+                                                 (libusb_hotplug_event)(LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED | LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT),
+                                                 LIBUSB_HOTPLUG_ENUMERATE,
+                                                 0x057e,
+                                                 0x0337,
+                                                 LIBUSB_HOTPLUG_MATCH_ANY,
+                                                 (libusb_hotplug_callback_fn) HotplugCallback,
+                                                 nullptr,
+                                                 &s_hotplug_handle) != LIBUSB_SUCCESS)
                 s_libusb_hotplug_enabled = false;
 
             if (s_libusb_hotplug_enabled)
@@ -203,7 +208,7 @@ namespace GCAdapter
         {
             if (s_libusb_hotplug_enabled)
             {
-                static timeval tv = { 0, 500000 };
+                static timeval tv = {0, 500000};
                 libusb_handle_events_timeout(s_libusb_context, &tv);
             }
             else
@@ -220,19 +225,16 @@ namespace GCAdapter
         LOG_DEBUG(GCAdapter) << "GC Adapter scanning thread stopped";
     }
 
-    void SetAdapterCallback(std::function<void(void)> func)
-    {
-        s_detect_callback = func;
-    }
+    void SetAdapterCallback(std::function<void(void)> func) { s_detect_callback = func; }
 
     void Setup()
     {
         libusb_device** list;
-        ssize_t cnt = libusb_get_device_list(s_libusb_context, &list);
+        ssize_t         cnt = libusb_get_device_list(s_libusb_context, &list);
 
         for (int i = 0; i < 4; i++)
         {
-            s_controller_type[i] = CONTROLLER_NONE;
+            s_controller_type[i]   = CONTROLLER_NONE;
             s_controller_rumble[i] = 0;
         }
 
@@ -342,8 +344,8 @@ namespace GCAdapter
         controller_status[chan].origin.sY = pad.stickY;
         controller_status[chan].origin.cX = pad.substickX;
         controller_status[chan].origin.cY = pad.substickY;
-        controller_status[chan].origin.L = pad.triggerLeft;
-        controller_status[chan].origin.R = pad.triggerRight;
+        controller_status[chan].origin.L  = pad.triggerLeft;
+        controller_status[chan].origin.R  = pad.triggerRight;
     }
 
     void Input(int chan, GCPadStatus* pad)
@@ -360,7 +362,8 @@ namespace GCAdapter
 
         if (s_controller_payload_size != sizeof(controller_payload_copy) || controller_payload_copy[0] != LIBUSB_DT_HID)
         {
-            LOG_ERROR(GCAdapter) << "error reading payload (size: " << s_controller_payload_size << ", type: 0x" << std::hex << controller_payload_copy[0] << ")";
+            LOG_ERROR(GCAdapter) << "error reading payload (size: " << s_controller_payload_size << ", type: 0x" << std::hex << controller_payload_copy[0]
+                                 << ")";
             Reset();
         }
         else
@@ -368,7 +371,8 @@ namespace GCAdapter
             uint8_t type = controller_payload_copy[1 + (9 * chan)] >> 4;
             if (type != CONTROLLER_NONE && s_controller_type[chan] == CONTROLLER_NONE)
             {
-                LOG_DEBUG(GCAdapter) << "New device connected to Port " << chan + 1 << " of Type: 0x" << std::hex << (int)controller_payload_copy[1 + (9 * chan)];
+                LOG_DEBUG(GCAdapter) << "New device connected to Port " << chan + 1 << " of Type: 0x" << std::hex
+                                     << (int) controller_payload_copy[1 + (9 * chan)];
             }
 
             s_controller_type[chan] = type;
@@ -379,38 +383,44 @@ namespace GCAdapter
                 uint8_t b1 = controller_payload_copy[1 + (9 * chan) + 1];
                 uint8_t b2 = controller_payload_copy[1 + (9 * chan) + 2];
 
-                if (b1 & (1 << 0)) pad->button |= PAD_BUTTON_A;
-                if (b1 & (1 << 1)) pad->button |= PAD_BUTTON_B;
-                if (b1 & (1 << 2)) pad->button |= PAD_BUTTON_X;
-                if (b1 & (1 << 3)) pad->button |= PAD_BUTTON_Y;
+                if (b1 & (1 << 0))
+                    pad->button |= PAD_BUTTON_A;
+                if (b1 & (1 << 1))
+                    pad->button |= PAD_BUTTON_B;
+                if (b1 & (1 << 2))
+                    pad->button |= PAD_BUTTON_X;
+                if (b1 & (1 << 3))
+                    pad->button |= PAD_BUTTON_Y;
 
-                if (b1 & (1 << 4)) pad->button |= PAD_BUTTON_LEFT;
-                if (b1 & (1 << 5)) pad->button |= PAD_BUTTON_RIGHT;
-                if (b1 & (1 << 6)) pad->button |= PAD_BUTTON_DOWN;
-                if (b1 & (1 << 7)) pad->button |= PAD_BUTTON_UP;
+                if (b1 & (1 << 4))
+                    pad->button |= PAD_BUTTON_LEFT;
+                if (b1 & (1 << 5))
+                    pad->button |= PAD_BUTTON_RIGHT;
+                if (b1 & (1 << 6))
+                    pad->button |= PAD_BUTTON_DOWN;
+                if (b1 & (1 << 7))
+                    pad->button |= PAD_BUTTON_UP;
 
-                if (b2 & (1 << 0)) pad->button |= PAD_BUTTON_START;
-                if (b2 & (1 << 1)) pad->button |= PAD_TRIGGER_Z;
-                if (b2 & (1 << 2)) pad->button |= PAD_TRIGGER_R;
-                if (b2 & (1 << 3)) pad->button |= PAD_TRIGGER_L;
+                if (b2 & (1 << 0))
+                    pad->button |= PAD_BUTTON_START;
+                if (b2 & (1 << 1))
+                    pad->button |= PAD_TRIGGER_Z;
+                if (b2 & (1 << 2))
+                    pad->button |= PAD_TRIGGER_R;
+                if (b2 & (1 << 3))
+                    pad->button |= PAD_TRIGGER_L;
 
-                pad->stickX = controller_payload_copy[1 + (9 * chan) + 3];
-                pad->stickY = controller_payload_copy[1 + (9 * chan) + 4];
-                pad->substickX = controller_payload_copy[1 + (9 * chan) + 5];
-                pad->substickY = controller_payload_copy[1 + (9 * chan) + 6];
-                pad->triggerLeft = controller_payload_copy[1 + (9 * chan) + 7];
+                pad->stickX       = controller_payload_copy[1 + (9 * chan) + 3];
+                pad->stickY       = controller_payload_copy[1 + (9 * chan) + 4];
+                pad->substickX    = controller_payload_copy[1 + (9 * chan) + 5];
+                pad->substickY    = controller_payload_copy[1 + (9 * chan) + 6];
+                pad->triggerLeft  = controller_payload_copy[1 + (9 * chan) + 7];
                 pad->triggerRight = controller_payload_copy[1 + (9 * chan) + 8];
             }
         }
     }
 
-    bool IsDetected()
-    {
-        return s_detected;
-    }
+    bool IsDetected() { return s_detected; }
 
-    bool IsDriverDetected()
-    {
-        return !s_libusb_driver_not_supported;
-    }
+    bool IsDriverDetected() { return !s_libusb_driver_not_supported; }
 }

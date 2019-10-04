@@ -1,39 +1,33 @@
-#include <QGroupBox>
-#include <QGridLayout>
-#include <QLabel>
 #include <QCheckBox>
 #include <QDialogButtonBox>
+#include <QGridLayout>
+#include <QGroupBox>
+#include <QLabel>
 #include <QPushButton>
-#include <QThread>
 #include <QSettings>
-
-#ifdef __OP64_COMPILE__
-#include <oplog.h>
-#else
-#include "standalone.h"
-#endif
+#include <QThread>
 
 #include "configdlg.h"
 #include "gcadapter.h"
+#include "util.h"
 
-ConfigDialog::ConfigDialog(QWidget* parent)
-    : QDialog(parent)
+ConfigDialog::ConfigDialog(QWidget* parent) : QDialog(parent)
 {
     // status
-    status = new QLabel(tr("Adapter Not Detected"));
-    statusGroupBox = new QGroupBox(tr("Status"));
+    status               = new QLabel(tr("Adapter Not Detected"));
+    statusGroupBox       = new QGroupBox(tr("Status"));
     QHBoxLayout* slayout = new QHBoxLayout;
 
     slayout->addWidget(status);
     statusGroupBox->setLayout(slayout);
 
     // settings
-    menuGroupBox = new QGroupBox(tr("Settings"));
+    menuGroupBox      = new QGroupBox(tr("Settings"));
     QGridLayout* menu = new QGridLayout;
 
     QLabel* enabledLabel = new QLabel(tr("Enabled"));
-    QLabel* switchLabel = new QLabel(tr("Use L as Z"));
-    QLabel* vcLabel = new QLabel(tr("Use generic VC deadzone mapping (inaccurate)"));
+    QLabel* switchLabel  = new QLabel(tr("Use L as Z"));
+    QLabel* vcLabel      = new QLabel(tr("Use generic VC deadzone mapping (inaccurate)"));
     vcLabel->setWordWrap(true);
 
     menu->addWidget(enabledLabel, 0, 1);
@@ -42,7 +36,7 @@ ConfigDialog::ConfigDialog(QWidget* parent)
 
     for (uint32_t i = 0; i < 4; i++)
     {
-        QLabel* cLabel = new QLabel("Controller " + QString::number(i+1));
+        QLabel* cLabel = new QLabel("Controller " + QString::number(i + 1));
 
         cEnabled[i] = new QCheckBox;
         cEnabled[i]->setChecked(GCAdapter::controller_status[i].enabled);
@@ -53,10 +47,10 @@ ConfigDialog::ConfigDialog(QWidget* parent)
         vcDeadzone[i] = new QCheckBox;
         vcDeadzone[i]->setChecked(GCAdapter::controller_status[i].vcDeadzone);
 
-        menu->addWidget(cLabel, i+1, 0);
-        menu->addWidget(cEnabled[i], i+1, 1);
-        menu->addWidget(cSwap[i], i+1, 2);
-        menu->addWidget(vcDeadzone[i], i+1, 3);
+        menu->addWidget(cLabel, i + 1, 0);
+        menu->addWidget(cEnabled[i], i + 1, 1);
+        menu->addWidget(cSwap[i], i + 1, 2);
+        menu->addWidget(vcDeadzone[i], i + 1, 3);
     }
 
     menuGroupBox->setLayout(menu);
@@ -66,7 +60,7 @@ ConfigDialog::ConfigDialog(QWidget* parent)
     connect(buttonBox, SIGNAL(accepted()), this, SLOT(saveAndClose()));
     connect(buttonBox, SIGNAL(rejected()), this, SLOT(close()));
 
-    QVBoxLayout *layout = new QVBoxLayout;
+    QVBoxLayout* layout = new QVBoxLayout;
     layout->addWidget(statusGroupBox);
     layout->addWidget(menuGroupBox);
     layout->addWidget(buttonBox);
@@ -87,9 +81,7 @@ ConfigDialog::ConfigDialog(QWidget* parent)
     }
 }
 
-ConfigDialog::~ConfigDialog()
-{
-}
+ConfigDialog::~ConfigDialog() {}
 
 void ConfigDialog::setDetected()
 {
@@ -102,8 +94,8 @@ void ConfigDialog::saveAndClose()
 
     for (uint32_t i = 0; i < 4; i++)
     {
-        GCAdapter::controller_status[i].enabled = cEnabled[i]->isChecked();
-        GCAdapter::controller_status[i].l_as_z = cSwap[i]->isChecked();
+        GCAdapter::controller_status[i].enabled    = cEnabled[i]->isChecked();
+        GCAdapter::controller_status[i].l_as_z     = cSwap[i]->isChecked();
         GCAdapter::controller_status[i].vcDeadzone = vcDeadzone[i]->isChecked();
 
         settings.setValue("controller" + QString::number(i) + "/enabled", GCAdapter::controller_status[i].enabled);
