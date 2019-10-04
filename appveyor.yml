@@ -19,6 +19,9 @@ for:
     only:
       - platform: x86
 
+  environment:
+      QTDIR: C:\Qt\5.12.4\msvc2017
+
   build_script:
   - cmd: msbuild "C:\projects\gcadapter64\gcadapter64.sln" /m /verbosity:normal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /p:QtInstall=C:\Qt\5.12.4\msvc2017
 
@@ -27,6 +30,9 @@ for:
   matrix:
     only:
     - platform: x64
+
+  environment:
+      QTDIR: C:\Qt\5.12.4\msvc2017_64
 
   build_script:
   - cmd: msbuild "C:\projects\gcadapter64\gcadapter64.sln" /m /verbosity:normal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /p:QtInstall=C:\Qt\5.12.4\msvc2017_64
