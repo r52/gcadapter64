@@ -1,19 +1,25 @@
-#include <thread>
-
+#include "spec.h"
 #include "Controller_1.1.h"
 #include "configdlg.h"
 #include "gcadapter.h"
-#include "spec.h"
 #include "util.h"
 
 #include <QApplication>
+#include <QMessageBox>
 #include <QSettings>
-#include <QThread>
 
 // VC values???
 #define DEADZONE 15
 
 #define TEST_VC_DEADZONE(num) (std::abs(num) > DEADZONE) ? (INT8_MAX / (INT8_MAX - DEADZONE)) * (num - (sgn(num) * DEADZONE)) : 0;
+
+static struct GCApp
+{
+    int          argc    = 1;
+    char*        argv[2] = {strdup("dummy"), {}};
+    QApplication app{argc, argv};
+    ConfigDialog dlg;
+}* gc = nullptr;
 
 template <typename T>
 int sgn(T val)
@@ -26,20 +32,35 @@ static void configDlgSetDetected(ConfigDialog* dlg)
     QMetaObject::invokeMethod(dlg, "setDetected", Qt::QueuedConnection);
 }
 
-static void configDlgThread()
+static void startGCApp()
 {
-    int          argc = 0;
-    char*        argv = 0;
-    QApplication a(argc, &argv);
+    if (!gc)
+    {
+        // Init settings first
+        QSettings settings(SETTINGS_FILE, QSettings::IniFormat);
 
-    ConfigDialog dlg;
-    GCAdapter::SetAdapterCallback(std::bind(configDlgSetDetected, &dlg));
-    dlg.exec();
+        for (uint32_t i = 0; i < 4; i++)
+        {
+            GCAdapter::controller_status[i].enabled    = settings.value("controller" + QString::number(i) + "/enabled").toBool();
+            GCAdapter::controller_status[i].l_as_z     = settings.value("controller" + QString::number(i) + "/l_as_z").toBool();
+            GCAdapter::controller_status[i].vcDeadzone = settings.value("controller" + QString::number(i) + "/vcdeadzone").toBool();
+        }
+
+        gc = new GCApp;
+        GCAdapter::SetAdapterCallback(std::bind(configDlgSetDetected, &gc->dlg));
+    }
 }
 
 EXPORT void CALL CloseDLL(void)
 {
+    GCAdapter::SetAdapterCallback(nullptr);
     GCAdapter::Shutdown();
+
+    if (gc)
+    {
+        delete gc;
+        gc = nullptr;
+    }
 }
 
 EXPORT void CALL ControllerCommand(int Control, uint8_t* Command)
@@ -47,23 +68,27 @@ EXPORT void CALL ControllerCommand(int Control, uint8_t* Command)
     return;
 }
 
-EXPORT void CALL DllAbout(void* hParent) {}
+EXPORT void CALL DllAbout(void* hParent)
+{
+    startGCApp();
+
+    static QString aboutMsg = "Dolphin GC Adapter Plugin<br/>"
+                              "<br/>"
+                              "Ported from <a href='https://github.com/dolphin-emu/dolphin/blob/master/Source/Core/InputCommon/GCAdapter.cpp'>Dolphin</a><br/>"
+                              "<br/>"
+                              "Licensed under GPLv2<br/>"
+                              "Source code available at <a href='https://github.com/r52/gcadapter64'>GitHub</a>";
+
+    QMessageBox::about(nullptr, "About Dolphin GC Adapter Plugin", aboutMsg);
+    gc->app.processEvents();
+}
 
 EXPORT void CALL DllConfig(void* hParent)
 {
-    if (nullptr == qApp)
-    {
-        std::thread dlgThread(configDlgThread);
-        dlgThread.join();
-    }
-    else
-    {
-        ConfigDialog dlg;
-        GCAdapter::SetAdapterCallback(std::bind(configDlgSetDetected, &dlg));
-        dlg.exec();
-    }
+    startGCApp();
 
-    GCAdapter::SetAdapterCallback(nullptr);
+    gc->dlg.show();
+    gc->app.processEvents();
 }
 
 EXPORT void CALL DllTest(void* hParent) {}
@@ -72,7 +97,7 @@ EXPORT void CALL GetDllInfo(PLUGIN_INFO* PluginInfo)
 {
     PluginInfo->Version = 0x0101;
     PluginInfo->Type    = PLUGIN_TYPE_CONTROLLER;
-    op::strlcpy(PluginInfo->Name, "GC Adapter Test", sizeof(PluginInfo->Name));
+    strcpy_s(PluginInfo->Name, sizeof(PluginInfo->Name), "Dolphin GC Adapter Plugin");
     return;
 }
 
@@ -122,15 +147,6 @@ EXPORT void CALL GetKeys(int32_t Control, BUTTONS* Keys)
 
 EXPORT void CALL InitiateControllers(CONTROL_INFO ControlInfo)
 {
-    QSettings settings(SETTINGS_FILE, QSettings::IniFormat);
-
-    for (uint32_t i = 0; i < 4; i++)
-    {
-        GCAdapter::controller_status[i].enabled    = settings.value("controller" + QString::number(i) + "/enabled").toBool();
-        GCAdapter::controller_status[i].l_as_z     = settings.value("controller" + QString::number(i) + "/l_as_z").toBool();
-        GCAdapter::controller_status[i].vcDeadzone = settings.value("controller" + QString::number(i) + "/vcdeadzone").toBool();
-    }
-
     GCAdapter::Init();
 
     for (uint32_t i = 0; i < 4; i++)

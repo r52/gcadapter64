@@ -172,13 +172,12 @@
     <ClCompile Include="configdlg.cpp" />
     <ClCompile Include="gcadapter.cpp" />
     <ClCompile Include="spec.cpp" />
-    <ClCompile Include="util.cpp" />
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="configdlg.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Controller #1.1.h" />
+    <ClInclude Include="Controller_1.1.h" />
     <ClInclude Include="gcadapter.h" />
     <ClInclude Include="spec.h" />
     <ClInclude Include="util.h" />

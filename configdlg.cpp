@@ -5,7 +5,6 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QSettings>
-#include <QThread>
 
 #include "configdlg.h"
 #include "gcadapter.h"
@@ -80,8 +79,6 @@ ConfigDialog::ConfigDialog(QWidget* parent) : QDialog(parent)
         status->setText(tr("Adapter Detected"));
     }
 }
-
-ConfigDialog::~ConfigDialog() {}
 
 void ConfigDialog::setDetected()
 {
