@@ -15,6 +15,6 @@ environment:
 build:
   project: gcadapter64.sln
   parallel: true
-  verbosity: minimal
+  verbosity: detailed
 after_build:
 - ps: .\deploy\pj64package.ps1 -platform "$($env:PLATFORM)"
