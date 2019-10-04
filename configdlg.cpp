@@ -67,11 +67,12 @@ ConfigDialog::ConfigDialog(QWidget* parent) : QDialog(parent)
     setLayout(layout);
     setWindowTitle(tr("Settings"));
 
-    if (!GCAdapter::IsDetected())
+    const char* errormsg = nullptr;
+    if (!GCAdapter::IsDetected(&errormsg))
     {
-        if (!GCAdapter::IsDriverDetected())
+        if (errormsg)
         {
-            status->setText(tr("Driver Not Detected"));
+            status->setText(errormsg);
         }
     }
     else

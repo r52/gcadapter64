@@ -103,27 +103,28 @@ EXPORT void CALL GetDllInfo(PLUGIN_INFO* PluginInfo)
 
 EXPORT void CALL GetKeys(int32_t Control, BUTTONS* Keys)
 {
-    GCAdapter::GCPadStatus gcpad;
+    GCPadStatus gcpad = GCAdapter::Input(Control);
 
-    GCAdapter::Input(Control, &gcpad);
+    if (gcpad.button & PAD_GET_ORIGIN)
+        GCAdapter::SetOrigin(Control, gcpad);
 
-    Keys->START_BUTTON = (gcpad.button & GCAdapter::PAD_BUTTON_START) != 0;
-    Keys->A_BUTTON     = (gcpad.button & GCAdapter::PAD_BUTTON_A) != 0;
-    Keys->B_BUTTON     = (gcpad.button & GCAdapter::PAD_BUTTON_B) != 0;
-    Keys->L_DPAD       = (gcpad.button & GCAdapter::PAD_BUTTON_LEFT) != 0;
-    Keys->U_DPAD       = (gcpad.button & GCAdapter::PAD_BUTTON_UP) != 0;
-    Keys->R_DPAD       = (gcpad.button & GCAdapter::PAD_BUTTON_RIGHT) != 0;
-    Keys->D_DPAD       = (gcpad.button & GCAdapter::PAD_BUTTON_DOWN) != 0;
-    Keys->Z_TRIG       = (gcpad.button & GCAdapter::PAD_TRIGGER_Z) != 0;
-    Keys->R_TRIG       = (gcpad.button & GCAdapter::PAD_TRIGGER_R) != 0;
+    Keys->START_BUTTON = (gcpad.button & PAD_BUTTON_START) != 0;
+    Keys->A_BUTTON     = (gcpad.button & PAD_BUTTON_A) != 0;
+    Keys->B_BUTTON     = (gcpad.button & PAD_BUTTON_B) != 0;
+    Keys->L_DPAD       = (gcpad.button & PAD_BUTTON_LEFT) != 0;
+    Keys->U_DPAD       = (gcpad.button & PAD_BUTTON_UP) != 0;
+    Keys->R_DPAD       = (gcpad.button & PAD_BUTTON_RIGHT) != 0;
+    Keys->D_DPAD       = (gcpad.button & PAD_BUTTON_DOWN) != 0;
+    Keys->Z_TRIG       = (gcpad.button & PAD_TRIGGER_Z) != 0;
+    Keys->R_TRIG       = (gcpad.button & PAD_TRIGGER_R) != 0;
 
     if (GCAdapter::controller_status[Control].l_as_z)
     {
-        Keys->Z_TRIG = Keys->Z_TRIG | ((gcpad.button & GCAdapter::PAD_TRIGGER_L) != 0);
+        Keys->Z_TRIG = Keys->Z_TRIG | ((gcpad.button & PAD_TRIGGER_L) != 0);
     }
     else
     {
-        Keys->L_TRIG = (gcpad.button & GCAdapter::PAD_TRIGGER_L) != 0;
+        Keys->L_TRIG = (gcpad.button & PAD_TRIGGER_L) != 0;
     }
 
     Keys->Y_AXIS = (int8_t) gcpad.stickX - GCAdapter::controller_status[Control].origin.sX;
@@ -154,14 +155,6 @@ EXPORT void CALL InitiateControllers(CONTROL_INFO ControlInfo)
         ControlInfo.Controls[i].Present = GCAdapter::controller_status[i].enabled;
         ControlInfo.Controls[i].RawData = GCAdapter::controller_status[i].enabled;
     }
-
-    for (uint32_t i = 0; i < 4; i++)
-    {
-        if (GCAdapter::controller_status[i].enabled)
-        {
-            GCAdapter::Calibrate(i);
-        }
-    }
 }
 
 EXPORT void CALL ReadController(int Control, uint8_t* Command)
@@ -183,30 +176,32 @@ EXPORT void CALL ReadController(int Control, uint8_t* Command)
             break;
         case RD_READKEYS:
         {
-            BUTTONS                pad;
-            GCAdapter::GCPadStatus gcpad;
+            BUTTONS pad;
 
             uint32_t* val = (uint32_t*) &Command[3]; // alias
 
-            GCAdapter::Input(Control, &gcpad);
+            GCPadStatus gcpad = GCAdapter::Input(Control);
 
-            pad.START_BUTTON = (gcpad.button & GCAdapter::PAD_BUTTON_START) != 0;
-            pad.A_BUTTON     = (gcpad.button & GCAdapter::PAD_BUTTON_A) != 0;
-            pad.B_BUTTON     = (gcpad.button & GCAdapter::PAD_BUTTON_B) != 0;
-            pad.L_DPAD       = (gcpad.button & GCAdapter::PAD_BUTTON_LEFT) != 0;
-            pad.U_DPAD       = (gcpad.button & GCAdapter::PAD_BUTTON_UP) != 0;
-            pad.R_DPAD       = (gcpad.button & GCAdapter::PAD_BUTTON_RIGHT) != 0;
-            pad.D_DPAD       = (gcpad.button & GCAdapter::PAD_BUTTON_DOWN) != 0;
-            pad.Z_TRIG       = (gcpad.button & GCAdapter::PAD_TRIGGER_Z) != 0;
-            pad.R_TRIG       = (gcpad.button & GCAdapter::PAD_TRIGGER_R) != 0;
+            if (gcpad.button & PAD_GET_ORIGIN)
+                GCAdapter::SetOrigin(Control, gcpad);
+
+            pad.START_BUTTON = (gcpad.button & PAD_BUTTON_START) != 0;
+            pad.A_BUTTON     = (gcpad.button & PAD_BUTTON_A) != 0;
+            pad.B_BUTTON     = (gcpad.button & PAD_BUTTON_B) != 0;
+            pad.L_DPAD       = (gcpad.button & PAD_BUTTON_LEFT) != 0;
+            pad.U_DPAD       = (gcpad.button & PAD_BUTTON_UP) != 0;
+            pad.R_DPAD       = (gcpad.button & PAD_BUTTON_RIGHT) != 0;
+            pad.D_DPAD       = (gcpad.button & PAD_BUTTON_DOWN) != 0;
+            pad.Z_TRIG       = (gcpad.button & PAD_TRIGGER_Z) != 0;
+            pad.R_TRIG       = (gcpad.button & PAD_TRIGGER_R) != 0;
 
             if (GCAdapter::controller_status[Control].l_as_z)
             {
-                pad.Z_TRIG = pad.Z_TRIG | ((gcpad.button & GCAdapter::PAD_TRIGGER_L) != 0);
+                pad.Z_TRIG = pad.Z_TRIG | ((gcpad.button & PAD_TRIGGER_L) != 0);
             }
             else
             {
-                pad.L_TRIG = (gcpad.button & GCAdapter::PAD_TRIGGER_L) != 0;
+                pad.L_TRIG = (gcpad.button & PAD_TRIGGER_L) != 0;
             }
 
             pad.Y_AXIS = (int8_t) gcpad.stickX - GCAdapter::controller_status[Control].origin.sX;
