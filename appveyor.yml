@@ -4,17 +4,32 @@ branches:
   - master
 image: Visual Studio 2017
 configuration: Release
-environment:
-  matrix:
-  - platform: x86
-    QtInstall: C:\Qt\5.12.4\msvc2017
-
-  - platform: x64
-    QtInstall: C:\Qt\5.12.4\msvc2017_64
-
+platform:
+- x86
+- x64
 build:
   project: gcadapter64.sln
   parallel: true
-  verbosity: detailed
+  verbosity: normal
+
+for:
+#x86
+-
+  matrix:
+    only:
+      - platform: x86
+
+  build_script:
+  - cmd: msbuild "C:\projects\gcadapter64\gcadapter64.sln" /m /verbosity:normal/logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /p:QtInstall=C:\Qt\5.12.4\msvc2017
+
+#x64
+-
+  matrix:
+    only:
+    - platform: x64
+
+  build_script:
+  - cmd: msbuild "C:\projects\gcadapter64\gcadapter64.sln" /m /verbosity:normal/logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /p:QtInstall=C:\Qt\5.12.4\msvc2017_64
+
 after_build:
 - ps: .\deploy\pj64package.ps1 -platform "$($env:PLATFORM)"
