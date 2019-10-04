@@ -6,7 +6,7 @@ An N64 emulator input plugin for the Official Controller Gamecube Adapter using 
 
 **Refer to [this guide](https://dolphin-emu.org/docs/guides/how-use-official-gc-controller-adapter-wii-u/) for instructions on how to setup the adapter.**
 
-**Check the [build bot](https://ci.appveyor.com/project/project64/project64) for the latest [Project64](https://github.com/project64/project64) compatible builds.**
+**Check the [build bot](https://ci.appveyor.com/project/r52/gcadapter64) for the latest [Project64](https://github.com/project64/project64) compatible builds.**
 
 ## Building
 
