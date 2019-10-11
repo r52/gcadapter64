@@ -2,7 +2,7 @@ version: '{branch}-{build}'
 branches:
   only:
   - master
-image: Visual Studio 2017
+image: Visual Studio 2019
 configuration: Release
 platform:
 - x86
@@ -20,10 +20,10 @@ for:
       - platform: x86
 
   environment:
-      QTDIR: C:\Qt\5.12.4\msvc2017
+      QTDIR: C:\Qt\5.12.5\msvc2017
 
   build_script:
-  - cmd: msbuild "C:\projects\gcadapter64\gcadapter64.sln" /m /verbosity:normal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /p:QtInstall=C:\Qt\5.12.4\msvc2017
+  - cmd: msbuild "C:\projects\gcadapter64\gcadapter64.sln" /m /verbosity:normal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /p:QtInstall=C:\Qt\5.12.5\msvc2017
 
 #x64
 -
@@ -32,10 +32,10 @@ for:
     - platform: x64
 
   environment:
-      QTDIR: C:\Qt\5.12.4\msvc2017_64
+      QTDIR: C:\Qt\5.12.5\msvc2017_64
 
   build_script:
-  - cmd: msbuild "C:\projects\gcadapter64\gcadapter64.sln" /m /verbosity:normal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /p:QtInstall=C:\Qt\5.12.4\msvc2017_64
+  - cmd: msbuild "C:\projects\gcadapter64\gcadapter64.sln" /m /verbosity:normal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /p:QtInstall=C:\Qt\5.12.5\msvc2017_64
 
 after_build:
 - ps: .\deploy\pj64package.ps1 -platform "$($env:PLATFORM)"
