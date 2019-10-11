@@ -7,10 +7,6 @@ configuration: Release
 platform:
 - x86
 - x64
-build:
-  project: gcadapter64.sln
-  parallel: true
-  verbosity: normal
 
 for:
 #x86
@@ -22,9 +18,6 @@ for:
   environment:
       QTDIR: C:\Qt\5.12.5\msvc2017
 
-  build_script:
-  - cmd: msbuild "C:\projects\gcadapter64\gcadapter64.sln" /m /verbosity:normal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /p:QtInstall=C:\Qt\5.12.5\msvc2017
-
 #x64
 -
   matrix:
@@ -34,8 +27,7 @@ for:
   environment:
       QTDIR: C:\Qt\5.12.5\msvc2017_64
 
-  build_script:
-  - cmd: msbuild "C:\projects\gcadapter64\gcadapter64.sln" /m /verbosity:normal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /p:QtInstall=C:\Qt\5.12.5\msvc2017_64
-
+build_script:
+  - cmd: msbuild "C:\projects\gcadapter64\gcadapter64.sln" /m /verbosity:normal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /p:QtInstall=%QTDIR%
 after_build:
 - ps: .\deploy\pj64package.ps1 -platform "$($env:PLATFORM)"
