@@ -523,12 +523,14 @@ more than one. (-n&lt;n|w&gt;)"
   </BoolProperty>
 <BoolProperty ReverseSwitch="openmp-" Name="OpenMPSupport" DisplayName="Open MP Support" Description="(overrides C/C++ property) Enable OpenMP 2.0 language extensions.     (/openmp)" Category="MocCpp" Switch="openmp" F1Keyword="VC.Project.VCCLCompilerTool.OpenMP">
   </BoolProperty>
-<EnumProperty Name="LanguageStandard" DisplayName="C++ Language Standard" Description="(overrides C/C++ property) Determines the C++ language standard.     (/std:c++14, /std:c++17, /std:c++latest)" Category="MocCpp" F1Keyword="VC.Project.VCCLCompilerTool.CppLanguageStandard">
+<EnumProperty Name="LanguageStandard" DisplayName="C++ Language Standard" Description="(overrides C/C++ property) Determines the C++ language standard the compiler will enforce. It is recommended to use the latest version when possible. (/std:c++14, /std:c++17, /std:c++latest)" Category="MocCpp" F1Keyword="VC.Project.VCCLCompilerTool.CppLanguageStandard">
+    <EnumValue Name="Default" Switch="" DisplayName="Default">
+    </EnumValue>
     <EnumValue Name="stdcpp14" Switch="std:c++14" DisplayName="ISO C++14 Standard">
     </EnumValue>
     <EnumValue Name="stdcpp17" Switch="std:c++17" DisplayName="ISO C++17 Standard">
     </EnumValue>
-    <EnumValue Name="stdcpplatest" Switch="std:c++latest" DisplayName="ISO C++ Latest Draft Standard">
+    <EnumValue Name="stdcpplatest" Switch="std:c++latest" DisplayName="Preview - Features from the Latest C++ Working Draft">
     </EnumValue>
   </EnumProperty>
 <BoolProperty Name="EnableModules" DisplayName="Enable C++ Modules (experimental)" Description="(overrides C/C++ property) Experimental support for the C++ Modules TS and Standard Library modules." Category="MocCpp" Switch="experimental:module" F1Keyword="VC.Project.VCCLCompilerTool.ModulesSupport">
